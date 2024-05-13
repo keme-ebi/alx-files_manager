@@ -14,7 +14,7 @@ class DBClient {
       this.db = this.client.db(database);
     }).catch((err) => {
       console.log(`Connection error: ${err}`);
-    });;
+    });
   }
 
   isAlive() {
