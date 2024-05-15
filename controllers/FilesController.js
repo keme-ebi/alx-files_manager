@@ -64,6 +64,37 @@ class FilesController {
     await files.insertOne(newFile);
     return res.status(201).send(newFile);
   }
+
+  static async getShow(req, res) {
+    const user = await FilesController.retrieveUser(req);
+    const { id } = req.params;
+
+    if (!user) return res.status(401).json({ error: 'Unuathorized' });
+    const files = dbClient.db.collection('files');
+    const file = await files.findOne({ _id: ObjectID(id), userId: user._id });
+
+    if (!file) return res.status(404).json({ error: 'Not found' });
+
+    return res.status(200).send(file);
+  }
+
+  static async getIndex(req, res) {
+    const user = await FilesController.retrieveUser(req);
+    if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { parentId, page = 0 } = req.query;
+
+    const files = dbClient.db.collection('files');
+    const limit = 20;
+    const skip = parseInt(page) * limit;
+
+    const query = { userId: user._id };
+    if (parentId) query.parentId = parentId;
+
+    const fileDoc = await files.find(query).skip(skip).limit(limit).toArray();
+
+    return res.status(200).send(fileDoc);
+  }
 }
 
 module.exports = FilesController;
