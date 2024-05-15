@@ -18,8 +18,7 @@ class UsersController {
       const result = await user.insertOne({ email, password: hashed });
       return res.status(201).json({ id: result.insertedId, email });
     } catch (error) {
-      console.log(error);
-      return res.status(500).json({ error: 'Internal server error' });
+      return error;
     }
   }
 }
