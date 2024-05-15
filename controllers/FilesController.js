@@ -62,7 +62,7 @@ class FilesController {
     }
 
     await files.insertOne(newFile);
-    return res.status(201).send(newFile);
+    return res.status(201).json(newFile);
   }
 
   static async getShow(req, res) {
@@ -75,7 +75,7 @@ class FilesController {
 
     if (!file) return res.status(404).json({ error: 'Not found' });
 
-    return res.status(200).send(file);
+    return res.status(200).json(file);
   }
 
   static async getIndex(req, res) {
@@ -86,14 +86,46 @@ class FilesController {
 
     const files = dbClient.db.collection('files');
     const limit = 20;
-    const skip = parseInt(page) * limit;
+    const skip = parseInt(page, 10) * limit;
 
     const query = { userId: user._id };
     if (parentId) query.parentId = parentId;
 
     const fileDoc = await files.find(query).skip(skip).limit(limit).toArray();
 
-    return res.status(200).send(fileDoc);
+    return res.status(200).json(fileDoc);
+  }
+
+  static async putPublish(req, res) {
+    const user = await FilesController.retrieveUser(req);
+    if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { id } = req.params;
+    const files = dbClient.db.collection('files');
+    let file = await files.findOne({ _id: ObjectID(id), userId: user._id });
+    if (!file) return res.status(404).json({ error: 'Not found' });
+
+    await files.updateOne({ _id: ObjectID(id), userId: user._id }, { $set: { isPublic: true } });
+
+    file = await files.findOne({ _id: ObjectID(id), userId: user._id });
+
+    return res.status(200).json(file);
+  }
+
+  static async putUnpublish(req, res) {
+    const user = await FilesController.retrieveUser(req);
+    if (!user) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { id } = req.params;
+    const files = dbClient.db.collection('files');
+    let file = await files.findOne({ _id: ObjectID(id), userId: user._id });
+    if (!file) return res.status(404).json({ error: 'Not found' });
+
+    await files.updateOne({ _id: ObjectID(id), userId: user._id }, { $set: { isPublic: false } });
+
+    file = await files.findOne({ _id: ObjectID(id), userId: user._id });
+
+    return res.status(200).json(file);
   }
 }
 
